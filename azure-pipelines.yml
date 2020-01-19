@@ -14,7 +14,7 @@ jobs:
       displayName: Add conda to PATH
     - script: |
         conda env create -f environment.yml
-        conda activate synther
+        source activate synther
         conda build . --output-folder build
       displayName: 'Build'
 #  - job: 'ubuntu'
