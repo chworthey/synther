@@ -1,3 +1,5 @@
+[![Build Status](https://dev.azure.com/pworthey007/Synther/_apis/build/status/ptrick.synther?branchName=master)](https://dev.azure.com/pworthey007/Synther/_build/latest?definitionId=5&branchName=master)
+
 # What is Synther? [Currently in development]
 
 Synther is a python library that enables a theory-oriented programmatic approach to making music that is more typically produced with Digital Audio Workstation (DAW) software tools.
