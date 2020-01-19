@@ -1,0 +1,26 @@
+package:
+  name: synther
+  version: 1.0.0
+
+requirements:
+  build:
+    - {{ compiler('c') }}
+    - python
+    - setuptools
+  host:
+    - python
+  run:
+    - python
+
+source:
+  path: .
+
+about:
+  home: https://github.com/ptrick/synther
+  license: MIT
+  license_file: LICENSE
+  summary: A wave synthesis tool designed for music production pipelines.
+  dev_url: https://github.com/ptrick/synther
+  description: |
+    Synther is a python library that enables a theory-oriented programmatic approach to making 
+    music that is more typically produced with Digital Audio Workstation (DAW) software tools.

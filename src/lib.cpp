@@ -145,7 +145,7 @@ static PyObject* produce_wave(PyObject *self, PyObject *args) {
   size_t end_index = ms_to_buffer_index(attack_start_ms + attack_ms + sustain_duration_ms + decay_ms);
 
   if (b.size() < end_index) {
-    b.resize(end_index);
+    b.resize(end_index, 0);
   }
 
   for (size_t n = start_index; n < end_index; n += 2) {
@@ -158,8 +158,10 @@ static PyObject* produce_wave(PyObject *self, PyObject *args) {
       decay_amp = clamp(1.0 - (static_cast<double>(n - sustain_end_index) / (end_index - sustain_end_index)), 0.0, 1.0);
     }
     uint16_t value = static_cast<uint16_t>(attack_amp * decay_amp * amp * wave_fn(n));
-    b[n] = value;
-    b[n+1] = value;
+
+    // Additive synthesis
+    b[n] += value;
+    b[n+1] += value;
   }
 
   Py_RETURN_NONE;
