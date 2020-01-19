@@ -1,3 +1,5 @@
 name: synther
 channels:
   - defaults
+dependencies:
+  - conda-build
