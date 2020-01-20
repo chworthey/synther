@@ -7,6 +7,7 @@
 #include <vector>
 #include <exception>
 #include <random>
+#include <cstdint>
 
 #include "WavIO.h"
 
@@ -199,6 +200,8 @@ static PyObject* free_buffer(PyObject *self, PyObject *args) {
   }
 
   buffers.erase(bf);
+
+  Py_RETURN_NONE;
 }
 
 static PyObject* sample_file(PyObject *self, PyObject *args) {

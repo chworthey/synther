@@ -1,5 +1,6 @@
 #include "WavIO.h"
 #include <fstream>
+#include <cstring>
 
 template <typename Word>
 std::ostream& write_word( std::ostream& outs, Word value, unsigned size = sizeof( Word ) )

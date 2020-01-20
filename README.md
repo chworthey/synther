@@ -46,11 +46,11 @@ import synther
 
 Happy hacking!
 
-## Making Modifications (Conda)
+## Making Modifications (Conda, Unsandboxed)
 
 ### Prerequisites:
 
-* Conda. To do this, it is recommended to install: [Anaconda](https://www.anaconda.com/)
+* Conda. To do this, it is recommended to install: [Anaconda](https://www.anaconda.com/). [Miniconda](https://docs.conda.io/en/latest/miniconda.html) will also work.
 
 ### Step 1 - Set up the Environment
 
@@ -62,20 +62,26 @@ conda env create -f environment.yml
 
 Modify the files to your liking in the `src/` directory.
 
-### Step 3 - Build the conda package
+### Step 3 - Activate environment
+
+```bash
+conda activate synther
+```
+
+### Step 4 - Build the conda package
 ```bash
 conda-build . --output-folder build
 ```
 
 The `--output-folder build` part of that will dump the files to the build folder in the working directory.
 
-### Step 4 - Upload packages to wherever you need it
+### Step 5 - Upload packages to wherever you need it
 
 The easiest method would be to follow the directions for uploading a package to the [Anaconda Cloud](https://docs.anaconda.com/anaconda-cloud/user-guide/tasks/work-with-packages/#uploading-packages).
 
 Another option would be to use your local filesystem as a conda channel host. Refer to [this documentation](https://docs.conda.io/projects/conda/en/latest/user-guide/tasks/create-custom-channels.html) for more information.
 
-### Step 5 - Consume!
+### Step 6 - Consume!
 
 ```bash
 conda activate <SOME_OTHER_ENVIRONMENT>
@@ -87,3 +93,27 @@ And then in some python file:
 import synther
 ```
 Happy hacking!
+
+## Sandboxing
+
+To get the build environment stable (say, for repeatable CI/CD), use the docker integration.
+
+### Prerequisites:
+
+* [Docker](https://www.docker.com/products/docker-desktop)
+
+Docker needs to be configured to the linux environment.
+
+### Step 1 - Build the image
+
+```bash
+docker build -t synther .
+```
+
+### Step 2 - Build the package from within the image
+
+Using the default docker cmd, we can just run:
+
+```bash
+docker run -it synther
+```

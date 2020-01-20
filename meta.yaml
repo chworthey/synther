@@ -5,6 +5,7 @@ package:
 requirements:
   build:
     - {{ compiler('c') }}
+    - {{ compiler('cxx') }}
     - python
     - setuptools
   host:

@@ -5,24 +5,14 @@ trigger:
 pr:
 - master
 jobs:
-  - job: 'windows'
-    displayName: 'Windows'
+  - job: 'ubuntu'
+    displayName: 'Ubuntu'
     pool:
-      vmImage: 'windows-latest'
+      vmImage: 'ubuntu-latest'
     steps:
-    - powershell: Write-Host "##vso[task.prependpath]$env:CONDA\Scripts"
-      displayName: Add conda to PATH
     - script: |
-        conda env create -f environment.yml
-        call activate synther
-        conda build . --output-folder build
-      displayName: 'Build'
-#  - job: 'ubuntu'
-#    displayName: 'Ubuntu'
-#    pool:
-#      vmImage: 'ubuntu-latest'
-#    steps:
-#    - script: |
-#        conda env create -f environment.yml
-#        conda-build . --output-folder build
-#      displayName: 'Build'
+        docker build -t synther .
+      displayName: 'Create image'
+    - script: |
+        docker run -it synther
+      displayName: 'Build package'

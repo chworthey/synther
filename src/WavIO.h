@@ -1,4 +1,5 @@
 #include <vector>
+#include <cstdint>
 
 namespace WavIO {
   bool write_wav(const char *filename, const std::vector<uint16_t>& buffer);
