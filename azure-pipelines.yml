@@ -14,5 +14,5 @@ jobs:
         docker build -t synther .
       displayName: 'Create image'
     - script: |
-        docker run -it synther
+        docker run synther
       displayName: 'Build package'
