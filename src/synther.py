@@ -1,69 +1,9 @@
-"""Copyright 2020 Patrick Worthey
-
-Source: https://github.com/ptrick/synther
-LICENSE: MIT
-See LICENSE and README.md files for more information.
-
-Synther
--------
-
-Synther is a python library (with a C extension) that enables a theory-oriented programmatic
-approach to making music that is more typically produced with Digital Audio Workstation (DAW) 
-software tools.
-
-The recommended way to use Synther is with the build project system. That means, using:
-project = gen_project()
-
-And then manipulating the project object to produce your music.
-
-See the SyntherProject class for usage examples.
-
-Why you might want to do otherwise:
-
-- Sometimes you want to examine the raw bytes of a low-level memory buffer. There is no way to do this in
-the build system because the build system will sometimes skip renders (making observing memory buffers a
-pointless exercise). To examine a memory buffer directly, use get_buffer_bytes().
-
-Classes
--------
-
-LogLvl
-  An integer enum class that specifies the verbosity of the console output.
-
-WaveType
-  An integer enum class that corresponds to common types of wave patterns.
-
-SyntherProject
-  A class that provides utilities for creating command queues (rather than maniuplating low-level 
-  buffers in realtime).
-
-Functions
----------
-
-set_log_level(log_level: LogLvl) -> None
-  Modifies the global log level to set the verbosity of the console output.
-
-gen_buffer() -> int
-  Generate a low-level memory buffer.
-
-get_buffer_bytes(buffer: int) -> bytes
-  Get a raw byte array from a memory buffer.
-
-dump_buffer(buffer: int, filename: str) -> None
-  Write the buffer to a .wav formatted file.
-
-sample_file(buffer: int, filename: str, buffer_start_ms: int, sample_start_ms: int, duration_ms: int) -> None
-  Read from a .wav file (other types not supported, currently).
-
-produce_wave(buffer: int, attack_start_ms: int, attack_ms: int, sustain_ms: int, decay_ms: int, freq_hz: float, amp: float, wave_type: WaveType) -> None
-  Inserts a generated wave into a memory buffer with additive synthesis.
-
-free_buffer(buffer: int) -> None
-  Frees the low-level memory buffer.
-
-gen_project() -> SyntherProject
-  Generates a build project.
-"""
+# Copyright 2020 Patrick Worthey
+# 
+# Source: https://github.com/ptrick/synther
+# Docs: https://synther.github.io/
+# LICENSE: MIT
+# See LICENSE and README.md files for more information.
 
 import _synther as syn
 from os import path
@@ -72,40 +12,56 @@ from enum import IntEnum
 import hashlib
 import json
 
+__author__ = 'Patrick Worthey'
+__version__ = '1.0.0'
+__license__ = 'MIT'
+__docformat__ = 'reStructuredText'
+
 # Primary use for this is to trigger render rebuilds for the users after a 
 # new installation of the library
-_lib_version = "1.0.0"
+_lib_version = '1.0.0'
 
 class LogLvl(IntEnum):
-  """Enum class that specifies the verbosity of the console output.
-  
-  Attributes
-  ----------
-  ERROR: int
-    Only the highest priority messages will be logged.
-  WARNING: int
-    Only high priority errors and warnings will be logged.
-  INFO: int
-    Important information, errors, and warnings will be logged.
-  VERBOSE: int
-    Everything including the smallest details will be logged.
-  """
+  """Enum class that specifies the verbosity of the console output."""
 
   ERROR = 0
+  """Only the highest priority messages will be logged."""
+
   WARNING = 1
+  """Only high priority errors and warnings will be logged."""
+
   INFO = 2
+  """Important information, errors, and warnings will be logged."""
+
   VERBOSE = 3
+  """Everything including the smallest details will be logged."""
+
+class WaveType(IntEnum):
+  """Enum class that corresponds to common types of wave patterns."""
+
+  SINE = 0
+  """Produces a sine wave. Soft characteristics, and great for bass sounds."""
+
+  SAW = 1
+  """Produces a saw wave. Harsh characteristics, and great for lead synths."""
+
+  SQUARE = 2
+  """Produces a square wave. Hollow characteristics."""
+
+  TRIANGLE = 3
+  """Produces a triangle wave. Sounds similar to a saw wave, but softer."""
+
+  NOISE = 4
+  """Produces random white noise. Great for sweeps and general atomosphere."""
 
 _log_level = LogLvl.INFO
 
 def set_log_level(log_level: LogLvl) -> None:
   """Modifies the global log level to set the verbosity of the console output.
 
-  Parameters
-  ----------
-  log_level: LogLvl
-    The verbosity level.
+  :param log_level: The verbosity level.
 
+  :type log_level: LogLvl
   """
 
   global _log_level
@@ -133,10 +89,7 @@ def gen_buffer() -> int:
   Buffers can be manipulated by other functions in order to produce sound waves.
   Buffers should be freed with free_buffer() when no longer in use.
   
-  Returns
-  -------
-  int
-    A direct handle to the low-level buffer.
+  :returns: A direct handle to the low-level buffer.
   """
 
   return syn.gen_buffer()
@@ -153,15 +106,9 @@ def get_buffer_bytes(buffer: int) -> bytes:
   wave form. Use 44100 hz (samples per second) to convert any sample position
   to a timestamp as needed.
 
-  Parameters
-  ----------
-  buffer: int
-    A direct handle to the low-level buffer.
+  :param buffer: A direct handle to the low-level buffer.
 
-  Returns
-  -------
-  bytes
-    A raw byte list-like object
+  :returns: A raw byte list-like object
   """
 
   return syn.get_buffer_bytes(buffer)
@@ -169,13 +116,9 @@ def get_buffer_bytes(buffer: int) -> bytes:
 def dump_buffer(buffer: int, filename: str) -> None:
   """Write the buffer to a .wav formatted file.
 
-  Parameters
-  ----------
-  buffer: int
-    A direct handle to the low-level buffer.
-  
-  filename: str
-    The file name (preferably with extension '.wav') to output to.
+  :param buffer: A direct handle to the low-level buffer.
+
+  :param filename: The file name (preferably with extension '.wav') to output to.
   """
 
   syn.dump_buffer(buffer, filename)
@@ -183,57 +126,28 @@ def dump_buffer(buffer: int, filename: str) -> None:
 def sample_file(buffer: int, filename: str, buffer_start_ms: int, sample_start_ms: int, duration_ms: int) -> None:
   """Read from a .wav file (other types not supported, currently).
 
-  NOTE: Currently, 44100 hz sample rate and 16 bit stereo is the ideal format.
-  A better sampling approach is in development for other formats.
-  Only PCM type 1 or 2 channel .wav files are supported currently.
+  .. note::
+    Currently, 44100 hz sample rate and 16 bit stereo is the ideal format.
+    A better sampling approach is in development for other formats.
+    Only PCM type 1 or 2 channel .wav files are supported.
 
-  Parameters
-  ----------
-  buffer: int
-    A direct handle to the low-level buffer.
-  
-  filename: str
-    The file name to read from.
-  
-  buffer_start_ms: int
-    The time (in milliseconds) to insert the clip.
+  :param buffer: A direct handle to the low-level buffer.
 
-  sample_start_ms: int
-    The time (in milliseconds) to start reading from the file.
+  :param filename: The file name to read from.
 
-  duration_ms: int
-    The time (in milliseconds) to copy from the file to the buffer.
+  :param buffer_start_ms: The time (in milliseconds) to insert the clip.
+
+  :param sample_start_ms: The time (in milliseconds) to start reading from the file.
+
+  :param duration_ms: The time (in milliseconds) to copy from the file to the buffer.
   """
 
   syn.sample_file(buffer, filename, buffer_start_ms, sample_start_ms, duration_ms)
 
-class WaveType(IntEnum):
-  """Enum class that corresponds to common types of wave patterns.
-  
-  Attributes
-  ----------
-  SINE: int
-    Produces a sine wave. Soft characteristics, and great for bass sounds.
-  SAW: int
-    Produces a saw wave. Harsh characteristics, and great for lead synths.
-  SQUARE: int
-    Produces a square wave. Hollow characteristics.
-  TRIANGLE: int
-    Produces a triangle wave. Sounds similar to a saw wave, but softer.
-  NOISE: int
-    Produces random white noise. Great for sweeps and general atomosphere.
-  """
-
-  SINE = 0
-  SAW = 1
-  SQUARE = 2
-  TRIANGLE = 3
-  NOISE = 4
-
 def produce_wave(buffer: int, attack_start_ms: int, attack_ms: int, sustain_ms: int, decay_ms: int, freq_hz: float, amp: float, wave_type: WaveType) -> None:
   """Inserts a generated wave into a memory buffer with additive synthesis.
 
-  To reduce popping, a wave is split into 3 phases:
+  To prevent popping, a wave is split into 3 phases:
 
   - Attack Phase: The period of time in which the amplitude [linearly] increases from 0 to the target amplitude
   - Sustain Phase: The period of time in which the amplitude is loudest, and the note is held
@@ -241,33 +155,26 @@ def produce_wave(buffer: int, attack_start_ms: int, attack_ms: int, sustain_ms: 
 
   The total wave duration is equal to: attack_ms + sustain_ms + decay_ms.
 
-  NOTE: Amplitude is currently a linear range in file format terms (not in decibals). The range is 0-32767. This is expected to change in future versions.
+  .. note::
+     Amplitude is currently a linear range in file format terms (not in decibals). The range is 0-32767. This is expected to change in future versions.
 
-  Parameters
-  ----------
-  buffer: int
-    A direct handle to the low-level buffer.
+  :param buffer: A direct handle to the low-level buffer.
 
-  attack_start_ms: int
-    The time (in milliseconds) where the wave starts.
+  :param attack_start_ms: The time (in milliseconds) where the wave starts.
 
-  attack_ms: int
-    The duration (in milliseconds) of the attack phase.
+  :param attack_ms: The duration (in milliseconds) of the attack phase.
 
-  sustain_ms: int
-    The duration (in milliseconds) of the sustain phase.
+  :param sustain_ms: The duration (in milliseconds) of the sustain phase.
 
-  decay_ms: int
-    The duration (in milliseconds) of the decay phase.
+  :param decay_ms: The duration (in milliseconds) of the decay phase.
 
-  freq_hz: float
-    The frequency (which defines a base pitch for most wave types) of the wave oscillation in hz. 440 hz is A4 standard pitch in musical terms.
-  
-  amp: float
-    A value in range 0-32767 which defines the amplitude (volume) of the oscillator during the sustain phase.
+  :param freq_hz: The frequency (which defines a base pitch for most wave types) of the wave oscillation in hz. 440 hz is A4 standard pitch in musical terms.
 
-  wave_type: WaveType
-    The type of wave to create the oscillation. Examples: WaveType.SINE, WaveType.SQUARE, etc.
+  :param amp: A value in range 0-32767 which defines the amplitude (volume) of the oscillator during the sustain phase.
+
+  :param wave_type: The type of wave to create the oscillation. Examples: WaveType.SINE, WaveType.SQUARE, etc.
+
+  :type wave_type: WaveType
   """
 
   syn.produce_wave(buffer, attack_start_ms, attack_ms, sustain_ms, decay_ms, freq_hz, amp, wave_type)
@@ -278,10 +185,7 @@ def free_buffer(buffer: int) -> None:
   This should always be done for a buffer generated with gen_buffer() as soon as the buffer is not needed anymore due to
   performance reasons.
 
-  Parameters
-  ----------
-  buffer: int
-    A direct handle to the low-level buffer.
+  :param buffer: A direct handle to the low-level buffer.
   """
 
   syn.free_buffer(buffer)
@@ -304,57 +208,6 @@ class SyntherProject():
 
   The build process will take care of many things such as watching for file changes that the pipeline is dependent on.
   It will also free any memory buffers as soon as they are no longer in use.
-
-  Example
-  -----
-  import synther as s
-
-  # Construct a project
-  proj = s.gen_project()
-
-  # Queue some commands
-  virtual_buffer = proj.queue_gen_buffer()
-  proj.queue_produce_wave(virtual_buffer, 0, 10, 80, 10, 440, 30000, s.WaveType.SINE)
-  proj.queue_produce_wave(virtual_buffer, 0, 10, 80, 10, 440, 30000, s.WaveType.SINE)
-  proj.queue_produce_wave(virtual_buffer, 0, 10, 80, 10, 440, 30000, s.WaveType.SINE)
-
-  # IMPORTANT: This next step must be done. It is used to determine when commands should 
-  # or should not be executed.
-  proj.queue_dump_buffer(virtual_buffer, 'output.wav')  # render wave to file
-
-  # Build. This is the step that will execute the commands, if the build system deems it should be.
-  proj.build()
-
-  # Do you need to execute the command queue anyway? Then do this instead:
-  # proj.clean() <-- UNCOMMENT
-  # proj.build() <-- UNCOMMENT
-
-  # Or, a more concise way to do the same as the 2 lines above:
-  # proj.rebuild() <-- UNCOMMENT
-
-  Methods
-  -------
-
-  queue_gen_buffer(buffer: int) -> int
-    Queues the creation of a memory buffer, and returns a virtual handle to that buffer-to-be.
-
-  queue_produce_wave(buffer: int, attack_start_ms: int, attack_ms: int, sustain_ms: int, decay_ms: int, freq_hz: float, amp: float, wave_type: WaveType) -> None
-    Queues the insertion of a generated wave into a memory buffer with additive synthesis.
-
-  queue_dump_buffer(buffer: int, filename: str) -> None
-    Queues the writing of a memory buffer to a .wav file.
-
-  queue_sample_file(buffer: int, filename: str, buffer_start_ms: int, sample_start_ms: int, duration_ms: int) -> None
-    Queues the sampling of a .wav file which will be copied into a memory buffer.
-
-  build() -> None
-    Renders all of the dumped memory buffers, but only if there have been changes to the pipeline since the last session.
-
-  clean() -> None
-    Deletes the build cache and all .wav files that would be rendered in a subsequent build.
-
-  rebuild() -> None
-    Cleans and builds the project.
   """
 
   def __init__(self):
@@ -451,9 +304,7 @@ class SyntherProject():
     This buffer will be freed automatically by the build system when no longer in use.
     The free will take place *immediately* after last use (not garbage collected).
 
-    Returns
-    -------
-    A virtual handle to a buffer-to-be.
+    :returns: A virtual handle to a buffer-to-be.
     """
 
     self._buffer_count = self._buffer_count + 1
@@ -471,33 +322,26 @@ class SyntherProject():
 
     The total wave duration is equal to: attack_ms + sustain_ms + decay_ms.
 
-    NOTE: Amplitude is currently a linear range in file format terms (not in decibals). The range is 0-32767. This is expected to change in future versions.
+    .. note::
+      Amplitude is currently a linear range in file format terms (not in decibals). The range is 0-32767. This is expected to change in future versions.
 
-    Parameters
-    ----------
-    buffer: int
-      A virtual handle to a buffer-to-be.
+    :param buffer: A virtual handle to a buffer-to-be.
 
-    attack_start_ms: int
-      The time (in milliseconds) where the wave starts.
+    :param attack_start_ms: The time (in milliseconds) where the wave starts.
 
-    attack_ms: int
-      The duration (in milliseconds) of the attack phase.
+    :param attack_ms: The duration (in milliseconds) of the attack phase.
 
-    sustain_ms: int
-      The duration (in milliseconds) of the sustain phase.
+    :param sustain_ms: The duration (in milliseconds) of the sustain phase.
 
-    decay_ms: int
-      The duration (in milliseconds) of the decay phase.
+    :param decay_ms: The duration (in milliseconds) of the decay phase.
 
-    freq_hz: float
-      The frequency (which defines a base pitch for most wave types) of the wave oscillation in hz. 440 hz is A4 standard pitch in musical terms.
-    
-    amp: float
-      A value in range 0-32767 which defines the amplitude (volume) of the oscillator during the sustain phase.
+    :param freq_hz: The frequency (which defines a base pitch for most wave types) of the wave oscillation in hz. 440 hz is A4 standard pitch in musical terms.
 
-    wave_type: WaveType
-      The type of wave to create the oscillation. Examples: WaveType.SINE, WaveType.SQUARE, etc.
+    :param amp: A value in range 0-32767 which defines the amplitude (volume) of the oscillator during the sustain phase.
+
+    :param wave_type: The type of wave to create the oscillation. Examples: WaveType.SINE, WaveType.SQUARE, etc.
+
+    :type wave_type: WaveType
     """
 
     self._push_history(_CmdType.PRODUCE_WAVE, buffer, attack_start_ms, attack_ms, sustain_ms, decay_ms, freq_hz, amp, wave_type)
@@ -505,13 +349,9 @@ class SyntherProject():
   def queue_dump_buffer(self, buffer: int, filename: str):
     """Queues the writing of a memory buffer to a .wav file.
 
-    Parameters
-    ----------
-    buffer: int
-      A virtual handle to a buffer-to-be.
-    
-    filename: str
-      The file name (preferably with extension '.wav') to output to.
+    :param buffer: A virtual handle to a buffer-to-be.
+
+    :param filename: The file name (preferably with extension '.wav') to output to.
     """
 
     self._push_history(_CmdType.DUMP_BUFFER, buffer, filename)
@@ -521,26 +361,20 @@ class SyntherProject():
 
     File types other than .wav are not supported, currently.
 
-    NOTE: 44100 hz sample rate and 16 bit stereo is the ideal format.
-    A better sampling approach is in development for other formats.
-    Only PCM type 1 or 2 channel .wav files are supported currently.
+    .. note::
+      44100 hz sample rate and 16 bit stereo is the ideal format.
+      A better sampling approach is in development for other formats.
+      Only PCM type 1 or 2 channel .wav files are supported currently.
 
-    Parameters
-    ----------
-    buffer: int
-      A virtual handle to a buffer-to-be.
-    
-    filename: str
-      The file name to read from.
-    
-    buffer_start_ms: int
-      The time (in milliseconds) to insert the clip.
+    :param buffer: A virtual handle to a buffer-to-be.
 
-    sample_start_ms: int
-      The time (in milliseconds) to start reading from the file.
+    :param filename: The file name to read from.
 
-    duration_ms: int
-      The time (in milliseconds) to copy from the file to the buffer.
+    :param buffer_start_ms: The time (in milliseconds) to insert the clip.
+
+    :param sample_start_ms: The time (in milliseconds) to start reading from the file.
+
+    :param duration_ms: The time (in milliseconds) to copy from the file to the buffer.
     """
 
     self._push_history(_CmdType.SAMPLE_FILE, buffer, filename, buffer_start_ms, sample_start_ms, duration_ms)
@@ -585,8 +419,6 @@ class SyntherProject():
 
   def build(self) -> None:
     """Renders all of the dumped memory buffers, but only if there have been changes to the pipeline since the last session.
-
-    See SyntherProject class documentation for examples.
     """
 
     _log_info('Starting build.')
@@ -660,7 +492,7 @@ class SyntherProject():
   def clean(self) -> None:
     """Deletes the build cache and all .wav files that would be rendered in a subsequent build.
 
-    Warning: any file names passed into queue_dump_buffer() will be deleted.
+    .. warning:: Any file names passed into queue_dump_buffer() will be deleted.
     """
 
     _log_info('Starting clean.')
@@ -679,7 +511,7 @@ class SyntherProject():
   def rebuild(self) -> None:
     """Cleans and builds the project.
 
-    Warning: any file names passed into queue_dump_buffer() will be deleted.
+    .. warning:: any file names passed into queue_dump_buffer() will be deleted.
     """
     
     _log_info('Starting rebuild.')
@@ -692,10 +524,8 @@ def gen_project() -> SyntherProject:
   
   This is the recommended way to start interacting with Synther.
 
-  Returns
-  -------
+  :returns: A blank project.
 
-  SyntherProject
-    A blank project.
+  :rtype: SyntherProject
   """
   return SyntherProject()
