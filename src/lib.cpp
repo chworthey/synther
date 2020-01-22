@@ -18,6 +18,7 @@
 #include <exception>
 #include <random>
 #include <cstdint>
+#include <string>
 
 #include "WavIO.h"
 
@@ -26,6 +27,11 @@ static const char *synther_doc = "Module for running wave processing.";
 
 static uint64_t buffer_count = 0;
 static std::map<uint64_t, std::vector<uint16_t>> buffers;
+
+static void set_buffer_not_found_err(uint64_t buffer) {
+  std::string msg = "Buffer " + std::to_string(buffer)  + " not found.";
+  PyErr_SetString(SyntherError, msg.c_str());
+}
 
 static PyObject* gen_buffer(PyObject *self, PyObject *args) {
   buffers[++buffer_count] = std::vector<uint16_t>();
@@ -103,7 +109,7 @@ static PyObject* produce_wave(PyObject *self, PyObject *args) {
 
   auto bf = buffers.find(buffer);
   if (bf == buffers.end()) {
-    PyErr_SetString(SyntherError, "Buffer not found");
+    set_buffer_not_found_err(buffer);
     return NULL;
   }
 
@@ -188,7 +194,7 @@ static PyObject* get_buffer_bytes(PyObject *self, PyObject *args) {
 
   auto bf = buffers.find(buffer);
   if (bf == buffers.end()) {
-    PyErr_SetString(SyntherError, "Buffer not found");
+    set_buffer_not_found_err(buffer);
     return NULL;
   }
 
@@ -205,7 +211,7 @@ static PyObject* free_buffer(PyObject *self, PyObject *args) {
 
   auto bf = buffers.find(buffer);
   if (bf == buffers.end()) {
-    PyErr_SetString(SyntherError, "Buffer not found");
+    set_buffer_not_found_err(buffer);
     return NULL;
   }
 
@@ -228,7 +234,7 @@ static PyObject* sample_file(PyObject *self, PyObject *args) {
 
   auto bf = buffers.find(buffer);
   if (bf == buffers.end()) {
-    PyErr_SetString(SyntherError, "Buffer not found");
+    set_buffer_not_found_err(buffer);
     return NULL;
   }
 

@@ -14,16 +14,16 @@ def test_c_api_buffer_not_found():
 
   synther.set_log_level(synther.LogLvl.VERBOSE)
 
-  with pytest.raises(Exception, match="Buffer not found"):
+  with pytest.raises(Exception, match="Buffer"):
     synther.get_buffer_bytes(500)
 
-  with pytest.raises(Exception, match="Buffer not found"):
+  with pytest.raises(Exception, match="Buffer"):
     synther.produce_wave(500, 0, 10, 100, 10, 440, 30000, synther.WaveType.SINE)
 
-  with pytest.raises(Exception, match="Buffer not found"):
+  with pytest.raises(Exception, match="Buffer"):
     synther.sample_file(500, 'does-not-exists.wav', 0, 0, 100)
 
-  with pytest.raises(Exception, match="Buffer not found"):
+  with pytest.raises(Exception, match="Buffer"):
     synther.free_buffer(500)
 
 def test_c_api_commands():
