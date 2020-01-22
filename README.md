@@ -110,10 +110,8 @@ Docker needs to be configured to the linux environment.
 docker build -t synther .
 ```
 
-### Step 2 - Build the package from within the image
-
-Using the default docker cmd, we can just run:
+### Step 2 - Do something with it
 
 ```bash
-docker run -it synther
+docker run -it synther "<YOUR_COMMAND_HERE>"
 ```

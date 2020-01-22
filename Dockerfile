@@ -8,4 +8,4 @@ WORKDIR /synther
 
 RUN chmod +x image.sh && ./image.sh
 
-CMD [ "source activate synther && conda-build . --output-folder /build" ]
+CMD [ "ls" ]

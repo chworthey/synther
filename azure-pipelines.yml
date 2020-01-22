@@ -12,7 +12,4 @@ jobs:
     steps:
     - script: |
         docker build -t synther .
-      displayName: 'Create image'
-    - script: |
-        docker run synther
-      displayName: 'Build package'
+      displayName: 'Build image'

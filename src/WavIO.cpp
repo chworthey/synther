@@ -1,3 +1,13 @@
+/*
+* *******************************************************
+* Synther - Python C++ Extension                         
+* Copyright 2020 Patrick Worthey                         
+* Source: https://github.com/ptrick/synther              
+* LICENSE: MIT                                           
+* See LICENSE and README.md files for more information.  
+* *******************************************************
+*/
+
 #include "WavIO.h"
 #include <fstream>
 #include <cstring>
