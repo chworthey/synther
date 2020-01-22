@@ -422,6 +422,7 @@ class SyntherProject():
     """
 
     _log_info('Starting build.')
+    self._buffer_map = {} # Fresh render context
     renders = [h for h in self._history.values() if h['cmd_type'] == _CmdType.DUMP_BUFFER]
     cachedRenders = []
     rendersFound = False
@@ -436,7 +437,7 @@ class SyntherProject():
       filename = r['args'][1]
       # Find the work required to complete the render
       command_stack = [r]
-      dependency_stack = r['dependencies']
+      dependency_stack = r['dependencies'].copy()
       while len(dependency_stack) > 0:
         dep_id = dependency_stack.pop(len(dependency_stack) - 1)
         dep_his = self._history[dep_id]

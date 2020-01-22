@@ -4,9 +4,10 @@
 
 Synther is a python library that enables a theory-oriented programmatic approach to making music that is more typically produced with Digital Audio Workstation (DAW) software tools.
 
-## To Install latest build...
+## To Install latest build for your project...
 
 ```bash
+conda activate <YOUR ENVIRONMENT>
 conda install -c ptrick synther
 ```
 

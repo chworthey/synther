@@ -13,6 +13,14 @@ requirements:
   run:
     - python
 
+test:
+  requires:
+    - pytest
+  files:
+    - tests/synther_test.py
+  commands:
+    - pytest tests/synther_test.py
+
 source:
   path: .
 
