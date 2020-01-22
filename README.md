@@ -6,10 +6,14 @@ Synther is a python library that enables a theory-oriented programmatic approach
 
 ## To Install latest build for your project...
 
+For Windows or Linux:
+
 ```bash
 conda activate <YOUR ENVIRONMENT>
 conda install -c ptrick synther
 ```
+
+Mac is still in development, stay tuned!
 
 ## Documentation
 

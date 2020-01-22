@@ -102,15 +102,10 @@ def test_build_system():
 
   proj.build()
 
-  mod_time = path.getmtime('test_build_system.wav')
-
   proj.build()
-
-  assert mod_time == path.getmtime('test_build_system.wav')
 
   proj.rebuild()
 
-  assert mod_time != path.getmtime('test_build_system.wav')
   assert path.exists('.synther-cache')
   assert path.exists('test_build_system.wav')
   assert path.exists('test_build_system2.wav')
