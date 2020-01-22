@@ -10,7 +10,17 @@ Synther is a python library that enables a theory-oriented programmatic approach
 conda install -c ptrick synther
 ```
 
-## Features
+## Documentation
+
+### Examples
+
+Check out the [Examples repository](https://github.com/ptrick/synther-examples.git). Interactive Binders are available there.
+
+### References
+
+Check out the [docs](https://ptrick.github.io/synther-ref/).
+
+## Synther Features
 
 ### Build system
 
@@ -22,11 +32,7 @@ No user-interface fluff. Produce music with intention, science, math, and theory
 
 ### Modular
 
-This tool works best when it's out of your way. We do the heavy lifting (low-level wave generation, extraction, transformation, and loading) in a C library, and then wrap it minimally with a python module and the build system. Additional python modules can easily interact with it by queueing parameterized/customized commands in the build system, enabling rapid development of modules.
-
-## Examples
-
-Go to the [Example repository](https://github.com/ptrick/synther-examples.git).
+This tool works best when it's out of your way. We do the heavy lifting in a C library, and then wrap it minimally with a python module and the build system. Additional python modules can easily interact with it by queueing parameterized/customized commands in the build system, enabling rapid development of modules.
 
 ## Getting Started with Modifications (Simple Edition)
 
@@ -46,7 +52,7 @@ import synther
 
 Happy hacking!
 
-## Making Modifications (Conda, Unsandboxed)
+## Making Modifications (Conda, local machine)
 
 ### Prerequisites:
 
@@ -96,7 +102,7 @@ Happy hacking!
 
 ## Sandboxing
 
-To get the build environment stable (say, for repeatable CI/CD), use the docker integration.
+To get the build environment more stable, use the steps outlined below for using the docker integration.
 
 ### Prerequisites:
 
