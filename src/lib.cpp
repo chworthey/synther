@@ -25,10 +25,10 @@
 static PyObject *SyntherError;
 static const char *synther_doc = "Module for running wave processing.";
 
-static uint64_t buffer_count = 0;
-static std::map<uint64_t, std::vector<uint16_t>> buffers;
+static long long buffer_count = 0;
+static std::map<long long, std::vector<uint16_t>> buffers;
 
-static void set_buffer_not_found_err(uint64_t buffer) {
+static void set_buffer_not_found_err(long long buffer) {
   std::string msg = "Buffer " + std::to_string(buffer)  + " not found.";
   PyErr_SetString(SyntherError, msg.c_str());
 }
@@ -39,10 +39,10 @@ static PyObject* gen_buffer(PyObject *self, PyObject *args) {
 }
 
 static PyObject* dump_buffer(PyObject *self, PyObject *args) {
-  uint64_t buffer;
+  long long buffer;
   const char* filename;
 
-  if (!PyArg_ParseTuple(args, "Ks", &buffer, &filename)) {
+  if (!PyArg_ParseTuple(args, "Ls", &buffer, &filename)) {
     PyErr_SetString(SyntherError, "Insufficient args");
     return NULL;
   }
@@ -61,7 +61,7 @@ static PyObject* dump_buffer(PyObject *self, PyObject *args) {
   Py_RETURN_NONE;
 }
 
-static size_t ms_to_buffer_index(uint64_t ms) {
+static size_t ms_to_buffer_index(long long ms) {
   //  ms    sec     44100 samples
   //  1    1000ms       sec
   size_t r = static_cast<size_t>(ms / 1000.0 * 44100.0 * 2.0);
@@ -84,7 +84,7 @@ static double clamp(double val, double low, double high) {
   }
 }
 
-enum class WaveType : uint32_t {
+enum class WaveType : int {
   Sine     = 0,
   Saw      = 1,
   Square   = 2,
@@ -93,16 +93,16 @@ enum class WaveType : uint32_t {
 };
 
 static PyObject* produce_wave(PyObject *self, PyObject *args) {
-  uint64_t buffer;
-  uint64_t attack_start_ms;
-  uint64_t attack_ms;
-  uint64_t sustain_duration_ms;
-  uint64_t decay_ms;
+  long long buffer;
+  long long attack_start_ms;
+  long long attack_ms;
+  long long sustain_duration_ms;
+  long long decay_ms;
   double freq_hz;
   double amp;
-  uint32_t wave_type;
+  int wave_type;
 
-  if (!PyArg_ParseTuple(args, "KKKKKddk", &buffer, &attack_start_ms, &attack_ms, &sustain_duration_ms, &decay_ms, &freq_hz, &amp, &wave_type)) {
+  if (!PyArg_ParseTuple(args, "LLLLLddi", &buffer, &attack_start_ms, &attack_ms, &sustain_duration_ms, &decay_ms, &freq_hz, &amp, &wave_type)) {
     PyErr_SetString(SyntherError, "Insufficient args");
     return NULL;
   }
@@ -185,9 +185,9 @@ static PyObject* produce_wave(PyObject *self, PyObject *args) {
 }
 
 static PyObject* get_buffer_bytes(PyObject *self, PyObject *args) {
-  uint64_t buffer;
+  long long buffer;
 
-  if (!PyArg_ParseTuple(args, "K", &buffer)) {
+  if (!PyArg_ParseTuple(args, "L", &buffer)) {
     PyErr_SetString(SyntherError, "Insufficient args");
     return NULL;
   }
@@ -202,9 +202,9 @@ static PyObject* get_buffer_bytes(PyObject *self, PyObject *args) {
 }
 
 static PyObject* free_buffer(PyObject *self, PyObject *args) {
-  uint64_t buffer;
+  long long buffer;
 
-  if (!PyArg_ParseTuple(args, "K", &buffer)) {
+  if (!PyArg_ParseTuple(args, "L", &buffer)) {
     PyErr_SetString(SyntherError, "Insufficient args");
     return NULL;
   }
@@ -221,13 +221,13 @@ static PyObject* free_buffer(PyObject *self, PyObject *args) {
 }
 
 static PyObject* sample_file(PyObject *self, PyObject *args) {
-  uint64_t buffer;
+  long long buffer;
   const char* filename;
-  uint64_t buffer_start_ms;
-  uint64_t sample_start_ms;
-  uint64_t duration_ms;
+  long long buffer_start_ms;
+  long long sample_start_ms;
+  long long duration_ms;
 
-  if (!PyArg_ParseTuple(args, "KsKKK", &buffer, &filename, &buffer_start_ms, &sample_start_ms, &duration_ms)) {
+  if (!PyArg_ParseTuple(args, "LsLLL", &buffer, &filename, &buffer_start_ms, &sample_start_ms, &duration_ms)) {
     PyErr_SetString(SyntherError, "Insufficient args");
     return NULL;
   }
