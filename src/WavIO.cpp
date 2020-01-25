@@ -12,27 +12,29 @@
 #include <fstream>
 #include <cstring>
 
-template <typename Word>
-std::ostream& write_word( std::ostream& outs, Word value, unsigned size = sizeof( Word ) )
-{
-  for (; size; --size, value >>= 8) {
-    outs.put( static_cast <char> (value & 0xFF) );
+namespace {
+  template <typename Word>
+  std::ostream& write_word( std::ostream& outs, Word value, unsigned size = sizeof( Word ) )
+  {
+    for (; size; --size, value >>= 8) {
+      outs.put( static_cast <char> (value & 0xFF) );
+    }
+    return outs;
   }
-  return outs;
-}
 
-template <typename Word>
-std::istream& read_word( std::istream& outs, Word& outValue, unsigned size = sizeof( Word))
-{
-  std::vector<char> buffer = std::vector<char>(size);
-  outs.read(&buffer[0], size);
-  Word ov = 0;
-  outValue = 0;
-  for (unsigned n = 0; n < size; ++n, ov <<= 8) {
-    ov |= buffer[size - n - 1] & 0xFF;
-    outValue = ov;
+  template <typename Word>
+  std::istream& read_word( std::istream& outs, Word& outValue, unsigned size = sizeof( Word))
+  {
+    std::vector<char> buffer = std::vector<char>(size);
+    outs.read(&buffer[0], size);
+    Word ov = 0;
+    outValue = 0;
+    for (unsigned n = 0; n < size; ++n, ov <<= 8) {
+      ov |= buffer[size - n - 1] & 0xFF;
+      outValue = ov;
+    }
+    return outs;
   }
-  return outs;
 }
 
 bool WavIO::write_wav(const char *filename, const std::vector<uint16_t>& buffer) {
@@ -116,10 +118,6 @@ namespace {
   }
 }
 
-bool WavIO::sample_full_wav(const char *filename, std::vector<uint16_t>& outBuffer, uint64_t buffer_start_ms) {
-  return true;
-}
-
 bool WavIO::sample_wav(const char *filename, std::vector<uint16_t>& outBuffer, uint64_t buffer_start_ms, uint64_t sample_start_ms, uint64_t duration_ms) {
 
   std::ifstream f(filename, std::ios::binary);
@@ -185,6 +183,10 @@ bool WavIO::sample_wav(const char *filename, std::vector<uint16_t>& outBuffer, u
 
   read_word(f, subChunk2Size, 4);
 
+  if (duration_ms == 0) {
+    duration_ms = static_cast<uint64_t>(static_cast<double>(subChunk2Size) / bytes_per_second * 1000.0);
+  }
+
   size_t start_byte_index = ms_to_byte_buffer_index(sample_start_ms, samples_per_second, num_channels, bits_per_sample, data_block_size);
   size_t end_byte_index = ms_to_byte_buffer_index(sample_start_ms + duration_ms, samples_per_second, num_channels, bits_per_sample, data_block_size);
 
@@ -208,7 +210,7 @@ bool WavIO::sample_wav(const char *filename, std::vector<uint16_t>& outBuffer, u
   size_t buffer_end_index = ms_to_byte_buffer_index(buffer_start_ms + duration_ms, 44100, 2, 16, 4) / 2;
 
   if (buffer_end_index > outBuffer.size()) {
-    outBuffer.resize(buffer_end_index);
+    outBuffer.resize(buffer_end_index, 0);
   }
 
   // direct cpy test...
@@ -237,8 +239,8 @@ bool WavIO::sample_wav(const char *filename, std::vector<uint16_t>& outBuffer, u
     uint16_t left_channel, right_channel;
     get_samples(left_channel, right_channel, audio_bytes, sample_index, data_block_size, bits_per_sample, num_channels);
 
-    outBuffer[insert_index] = left_channel;
-    outBuffer[insert_index + 1] = right_channel;
+    outBuffer[insert_index] += left_channel;
+    outBuffer[insert_index + 1] += right_channel;
   }
 
    return true;

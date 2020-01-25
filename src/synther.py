@@ -123,7 +123,7 @@ def dump_buffer(buffer: int, filename: str) -> None:
 
   syn.dump_buffer(buffer, filename)
 
-def sample_file(buffer: int, filename: str, buffer_start_ms: int, sample_start_ms: int, duration_ms: int) -> None:
+def sample_file(buffer: int, filename: str, buffer_start_ms: int, sample_start_ms: int, duration_ms: int = 0) -> None:
   """Read from a .wav file (other types not supported, currently).
 
   .. note::
@@ -139,7 +139,7 @@ def sample_file(buffer: int, filename: str, buffer_start_ms: int, sample_start_m
 
   :param sample_start_ms: The time (in milliseconds) to start reading from the file.
 
-  :param duration_ms: The time (in milliseconds) to copy from the file to the buffer.
+  :param duration_ms: The time (in milliseconds) to copy from the file to the buffer. If 0 (or unspecified), the duration will be equal to the file's total length.
   """
 
   syn.sample_file(buffer, filename, buffer_start_ms, sample_start_ms, duration_ms)
