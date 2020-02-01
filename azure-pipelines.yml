@@ -16,12 +16,8 @@ jobs:
         mkdir build
         docker cp synther_cont:/build build
       displayName: 'Copy build'
-    - task: CopyFiles@2
-      inputs:
-        contents: '**.tar.bz2'
-        targetFolder: $(Build.ArtifactStagingDirectory)
     - task: PublishBuildArtifacts@1
       inputs:
-        pathToPublish: $(Build.ArtifactStagingDirectory)
+        pathToPublish: build
         artifactName: drop
     
