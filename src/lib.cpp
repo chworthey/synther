@@ -22,13 +22,15 @@
 
 #include "WavIO.h"
 
+typedef long long bigint_t;
+
 static PyObject *SyntherError;
 static const char *synther_doc = "Module for running wave processing.";
 
-static long long buffer_count = 0;
-static std::map<long long, std::vector<uint16_t>> buffers;
+static bigint_t buffer_count = 0;
+static std::map<bigint_t, std::vector<uint16_t>> buffers;
 
-static void set_buffer_not_found_err(long long buffer) {
+static void set_buffer_not_found_err(bigint_t buffer) {
   std::string msg = "Buffer " + std::to_string(buffer)  + " not found.";
   PyErr_SetString(SyntherError, msg.c_str());
 }
@@ -39,7 +41,7 @@ static PyObject* gen_buffer(PyObject *self, PyObject *args) {
 }
 
 static PyObject* dump_buffer(PyObject *self, PyObject *args) {
-  long long buffer;
+  bigint_t buffer;
   const char* filename;
 
   if (!PyArg_ParseTuple(args, "Ls", &buffer, &filename)) {
@@ -61,7 +63,7 @@ static PyObject* dump_buffer(PyObject *self, PyObject *args) {
   Py_RETURN_NONE;
 }
 
-static size_t ms_to_buffer_index(long long ms) {
+static size_t ms_to_buffer_index(bigint_t ms) {
   //  ms    sec     44100 samples
   //  1    1000ms       sec
   size_t r = static_cast<size_t>(ms / 1000.0 * 44100.0 * 2.0);
@@ -93,11 +95,11 @@ enum class WaveType : int {
 };
 
 static PyObject* produce_wave(PyObject *self, PyObject *args) {
-  long long buffer;
-  long long attack_start_ms;
-  long long attack_ms;
-  long long sustain_duration_ms;
-  long long decay_ms;
+  bigint_t buffer;
+  bigint_t attack_start_ms;
+  bigint_t attack_ms;
+  bigint_t sustain_duration_ms;
+  bigint_t decay_ms;
   double freq_hz;
   double amp;
   int wave_type;
@@ -185,7 +187,7 @@ static PyObject* produce_wave(PyObject *self, PyObject *args) {
 }
 
 static PyObject* get_buffer_bytes(PyObject *self, PyObject *args) {
-  long long buffer;
+  bigint_t buffer;
 
   if (!PyArg_ParseTuple(args, "L", &buffer)) {
     PyErr_SetString(SyntherError, "Insufficient args");
@@ -202,7 +204,7 @@ static PyObject* get_buffer_bytes(PyObject *self, PyObject *args) {
 }
 
 static PyObject* free_buffer(PyObject *self, PyObject *args) {
-  long long buffer;
+  bigint_t buffer;
 
   if (!PyArg_ParseTuple(args, "L", &buffer)) {
     PyErr_SetString(SyntherError, "Insufficient args");
@@ -221,11 +223,11 @@ static PyObject* free_buffer(PyObject *self, PyObject *args) {
 }
 
 static PyObject* sample_file(PyObject *self, PyObject *args) {
-  long long buffer;
+  bigint_t buffer;
   const char* filename;
-  long long buffer_start_ms;
-  long long sample_start_ms;
-  long long duration_ms;
+  bigint_t buffer_start_ms;
+  bigint_t sample_start_ms;
+  bigint_t duration_ms;
 
   if (!PyArg_ParseTuple(args, "LsLLL", &buffer, &filename, &buffer_start_ms, &sample_start_ms, &duration_ms)) {
     PyErr_SetString(SyntherError, "Insufficient args");
@@ -246,6 +248,70 @@ static PyObject* sample_file(PyObject *self, PyObject *args) {
   Py_RETURN_NONE;
 }
 
+static PyObject* sample_buffer(PyObject *self, PyObject *args) {
+  bigint_t target_buffer;
+  bigint_t source_buffer;
+  bigint_t source_buffer_start_ms;
+  bigint_t target_buffer_start_ms;
+  bigint_t duration_ms;
+
+  if (!PyArg_ParseTuple(args, "LLLLL", &target_buffer, &source_buffer, &source_buffer_start_ms, &target_buffer_start_ms, &duration_ms)) {
+    PyErr_SetString(SyntherError, "Insufficient args");
+    return NULL;
+  }
+
+  auto bf_target = buffers.find(target_buffer);
+  if (bf_target == buffers.end()) {
+    set_buffer_not_found_err(target_buffer);
+    return NULL;
+  }
+
+  auto bf_source = buffers.find(source_buffer);
+  if (bf_source == buffers.end()) {
+    set_buffer_not_found_err(source_buffer);
+    return NULL;
+  }
+
+  if (bf_source->second.size() == 0) {
+    Py_RETURN_NONE;
+  }
+
+  size_t src_buf_start_index = ms_to_buffer_index(source_buffer_start_ms);
+  size_t src_buf_end_index = duration_ms == 0 ? 
+    bf_source->second.size() - 2 : 
+    ms_to_buffer_index(source_buffer_start_ms + duration_ms);
+
+  if (src_buf_start_index + 1 >= bf_source->second.size()) {
+    src_buf_start_index = bf_source->second.size() - 2;
+  }
+
+  if (src_buf_end_index + 1 >= bf_source->second.size()) {
+    src_buf_end_index = bf_source->second.size() - 2;
+  }
+
+  size_t tar_buf_start_index = ms_to_buffer_index(target_buffer_start_ms);
+  size_t tar_buf_end_index = src_buf_end_index - src_buf_start_index + tar_buf_start_index;
+
+  if (tar_buf_end_index + 1 >= bf_target->second.size()) {
+    bf_target->second.resize(tar_buf_end_index + 1, 0);
+  }
+  
+  for (
+    size_t tar_n = tar_buf_start_index, src_n = src_buf_start_index; 
+    tar_n + 1 < tar_buf_end_index &&
+    src_n + 1 < src_buf_end_index &&
+    tar_n + 1 < bf_target->second.size() &&
+    src_n + 1 < bf_source->second.size();
+    tar_n += 2, src_n += 2
+  ) 
+  {
+    bf_target->second[tar_n] += bf_source->second[src_n];
+    bf_target->second[tar_n + 1] += bf_source->second[src_n + 1];
+  }
+
+  Py_RETURN_NONE;
+}
+
 static PyMethodDef SyntherMethods[] = {
     {"gen_buffer",  gen_buffer, METH_VARARGS, "Generates a new audio buffer."},
     {"produce_wave", produce_wave, METH_VARARGS, "Produces a wave audio signal in a buffer."},
@@ -253,6 +319,7 @@ static PyMethodDef SyntherMethods[] = {
     {"get_buffer_bytes", get_buffer_bytes, METH_VARARGS, "Grabs the data from buffer memory for analysis in Python."},
     {"free_buffer", free_buffer, METH_VARARGS, "Frees a buffer from memory."},
     {"sample_file", sample_file, METH_VARARGS, "Samples waveform from a .wav file, and inserts into a buffer."},
+    {"sample_buffer", sample_buffer, METH_VARARGS, "Samples waveform from a source buffer, and inserts into target buffer."},
 
     {NULL, NULL, 0, NULL}        /* Sentinel */
 };

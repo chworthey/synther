@@ -19,7 +19,7 @@ __docformat__ = 'reStructuredText'
 
 # Primary use for this is to trigger render rebuilds for the users after a 
 # new installation of the library
-_lib_version = '1.0.0'
+_lib_version = __version__
 
 class LogLvl(IntEnum):
   """Enum class that specifies the verbosity of the console output."""
@@ -82,6 +82,22 @@ def _log_warning(output):
 def _log_error(output):
   if _log_level >= LogLvl.ERROR:
     print(output)
+
+def sample_buffer(target_buffer, source_buffer, source_start_ms, target_start_ms, duration_ms) -> None:
+  """Samples the source buffer which will be additively combined with a target memory buffer.
+
+    :param target_buffer: The target direct memory buffer handle.
+
+    :param source_buffer: The sample source direct memory buffer handle.
+
+    :param target_buffer_start_ms: The starting time (in milliseconds) of the sample insert.
+
+    :param source_buffer_start_ms: The starting time (in milliseconds) of where to sample from in the source buffer.
+
+    :param duration_ms: The duration (in milliseconds) of the sample. Set to 0 to sample to the end of the source buffer.
+  """
+
+  syn.sample_buffer(target_buffer, source_buffer, source_start_ms, target_start_ms, duration_ms)
 
 def gen_buffer() -> int:
   """Generate a low-level memory buffer.
@@ -196,6 +212,7 @@ class _CmdType(IntEnum):
   SAMPLE_FILE      = 1
   GEN_BUFFER       = 2
   PRODUCE_WAVE     = 3
+  SAMPLE_BUFFER    = 4
 
 class SyntherProject():
   """This class provides utilities for creating command queues (rather than maniuplating low-level buffers in realtime).
@@ -232,6 +249,10 @@ class SyntherProject():
       _CmdType.SAMPLE_FILE: {
         'cmdname': 'sample_file',
         'func': self._execute_sample_file
+      },
+      _CmdType.SAMPLE_BUFFER: {
+        'cmdname': 'sample_buffer',
+        'func': self._execute_sample_buffer
       }
     }
 
@@ -250,6 +271,14 @@ class SyntherProject():
       if last_buffer_history != None:
         deps = [last_buffer_history]
       args = [buffer] + args
+
+      # Since sample buffer pulls from another buffer, that also counts as dependency
+      # Thus, when the renderer walks the dependency tree, both are rendered prior to
+      # sampling and continuing with the render
+      if cmd_type == _CmdType.SAMPLE_BUFFER:
+        last_source_buffer_history = self._find_last_buffer_history(args[1])
+        if last_source_buffer_history != None:
+          deps.append(last_source_buffer_history)
 
     this_id = self._id_count
     self._history[self._id_count] = {
@@ -292,6 +321,22 @@ class SyntherProject():
       if cmd['cmd_type'] == _CmdType.SAMPLE_FILE and len(argv) > 0:
         m.update(str(os.path.getmtime(argv[0])).encode('utf-8'))
     return m.hexdigest()
+
+  def queue_sample_buffer(self, target_buffer: int, source_buffer: int, target_buffer_start_ms: int, source_buffer_start_ms: int, duration_ms: int = 0) -> None:
+    """Queues the sampling of a source buffer which will be additively combined with a target memory buffer.
+
+    :param target_buffer: The target virtual handle to a buffer-to-be.
+
+    :param source_buffer: The sample source virtual handle to a buffer-to-be.
+
+    :param target_buffer_start_ms: The starting time (in milliseconds) of the sample insert.
+
+    :param source_buffer_start_ms: The starting time (in milliseconds) of where to sample from in the source buffer.
+
+    :param duration_ms: The duration (in milliseconds) of the sample. Set to 0 to sample to the end of the source buffer.
+    """
+
+    self._push_history(_CmdType.SAMPLE_BUFFER, target_buffer, source_buffer, target_buffer_start_ms, source_buffer_start_ms, duration_ms)
 
   def queue_gen_buffer(self) -> int:
     """Queues the creation of a memory buffer, and returns a virtual handle to that buffer-to-be.
@@ -357,7 +402,7 @@ class SyntherProject():
     self._push_history(_CmdType.DUMP_BUFFER, buffer, filename)
 
   def queue_sample_file(self, buffer: int, filename: str, buffer_start_ms: int, sample_start_ms: int, duration_ms: int) -> None:
-    """Queues the sampling of a .wav file which will be copied into a memory buffer.
+    """Queues the sampling of a .wav file which will be additively combined with a memory buffer.
 
     File types other than .wav are not supported, currently.
 
@@ -381,6 +426,15 @@ class SyntherProject():
 
   def _get_runtime_buffer(self, buffer):
     return self._buffer_map[buffer]
+
+  def _execute_sample_buffer(self, cmd):
+    sample_buffer(
+      self._get_runtime_buffer(cmd['args'][0]), # target_buffer
+      self._get_runtime_buffer(cmd['args'][1]), # source_buffer
+      cmd['args'][2], # source_start_ms
+      cmd['args'][3], # target_start_ms
+      cmd['args'][3] # duration_ms
+    )
 
   def _execute_gen_buffer(self, cmd):
     self._buffer_map[cmd['args'][0]] = gen_buffer()
@@ -471,6 +525,8 @@ class SyntherProject():
       for cmd in render['stack']:
         if cmd['buffer'] != None:
           last_buffer_uses[cmd['buffer']] = cmd['id']
+        if cmd['cmd_type'] == _CmdType.SAMPLE_BUFFER: # sample buffer has 2 buffers
+          last_buffer_uses[cmd['args'][1]] = cmd['id']
 
     # Execute renders
     if not rendersFound:
@@ -481,9 +537,10 @@ class SyntherProject():
         for cmd in render['stack']:
           self._execute_command(cmd)
           if cmd['buffer'] != None and last_buffer_uses[cmd['buffer']] == cmd['id']:
-            _log_verbose('Freeing buffer.')
-            buf = self._get_runtime_buffer(cmd['buffer'])
-            free_buffer(buf)
+            virtual = cmd['buffer']
+            runtime = self._get_runtime_buffer(cmd['buffer'])
+            _log_verbose('Freeing buffer (Virtual: %d, Runtime: %d).' % (virtual, runtime))
+            free_buffer(runtime)
     
     # Save cache
     with open('.synther-cache', 'w') as fp:

@@ -2,8 +2,6 @@
 
 trigger:
 - master
-pr:
-- master
 jobs:
   - job: 'ubuntu'
     displayName: 'Ubuntu'
@@ -13,3 +11,17 @@ jobs:
     - script: |
         docker build -t synther .
       displayName: 'Build image'
+    - script: |
+        docker run --name synther_cont synther
+        mkdir build
+        docker cp synther_cont:/build ./build
+      displayName: 'Copy build'
+    - task: CopyFiles@2
+      inputs:
+        contents: './build/linux-64/**.tar.bz2'
+        targetFolder: $(Build.ArtifactStagingDirectory)
+    - task: PublishBuildArtifacts@1
+      inputs:
+        pathToPublish: $(Build.ArtifactStagingDirectory)
+        artifactName: drop
+    

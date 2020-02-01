@@ -34,9 +34,7 @@ def test_c_api_commands():
   synther.set_log_level(synther.LogLvl.VERBOSE)
 
   buf1 = synther.gen_buffer()
-  assert buf1 == 1
   buf2 = synther.gen_buffer()
-  assert buf2 == 2
 
   synther.produce_wave(buf1, 0, 10, 100, 10, 440, 30000, synther.WaveType.SINE)
 
@@ -80,17 +78,23 @@ def test_build_system():
   proj.queue_produce_wave(buf3, 0, 10, 100, 10, 440, 30000, synther.WaveType.SINE)
   proj.queue_dump_buffer(buf2, 'test_build_system2.wav')
 
+  buf4 = proj.queue_gen_buffer()
+  proj.queue_sample_buffer(buf4, buf3, 0, 0, 0)
+  proj.queue_dump_buffer(buf4, 'test_build_system3.wav')
+
   proj.clean()
 
   assert not path.exists('.synther-cache')
   assert not path.exists('test_build_system.wav')
   assert not path.exists('test_build_system2.wav')
+  assert not path.exists('test_build_system3.wav')
 
   proj.build()
 
   assert path.exists('.synther-cache')
   assert path.exists('test_build_system.wav')
   assert path.exists('test_build_system2.wav')
+  assert path.exists('test_build_system3.wav')
 
   os.remove('test_build_system.wav')
 
@@ -99,6 +103,7 @@ def test_build_system():
   assert path.exists('.synther-cache')
   assert path.exists('test_build_system.wav')
   assert path.exists('test_build_system2.wav')
+  assert path.exists('test_build_system3.wav')
 
   proj.build()
 
@@ -109,9 +114,11 @@ def test_build_system():
   assert path.exists('.synther-cache')
   assert path.exists('test_build_system.wav')
   assert path.exists('test_build_system2.wav')
+  assert path.exists('test_build_system3.wav')
 
   proj.clean()
 
   assert not path.exists('.synther-cache')
   assert not path.exists('test_build_system.wav')
   assert not path.exists('test_build_system2.wav')
+  assert not path.exists('test_build_system3.wav')
