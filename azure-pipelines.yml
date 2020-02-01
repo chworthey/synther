@@ -14,7 +14,10 @@ jobs:
     - script: |
         docker run --name synther_cont synther
         mkdir build
-        docker cp synther_cont:/build ./build
+        docker cp synther_cont:/build build
+        echo 'copied'
+        ls
+        ls build
       displayName: 'Copy build'
     - task: CopyFiles@2
       inputs:
