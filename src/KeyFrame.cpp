@@ -10,6 +10,7 @@
 
 #include "KeyFrame.h"
 
+#include <cmath>
 #include <vector>
 
 void KeyFrames::insertKeyFrame(Animation& animation, KeyFrame&& keyframe) {
