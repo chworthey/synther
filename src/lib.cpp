@@ -20,15 +20,19 @@
 #include <cstdint>
 #include <string>
 
+#include "KeyFrame.h"
 #include "WavIO.h"
-
-typedef long long bigint_t;
+#include "Types.h"
+#include "Effects.h"
 
 static PyObject *SyntherError;
 static const char *synther_doc = "Module for running wave processing.";
 
 static bigint_t buffer_count = 0;
 static std::map<bigint_t, std::vector<uint16_t>> buffers;
+
+static bigint_t animation_count = 0;
+static std::map<bigint_t, KeyFrames::Animation> animations;
 
 static void set_buffer_not_found_err(bigint_t buffer) {
   std::string msg = "Buffer " + std::to_string(buffer)  + " not found.";
@@ -117,7 +121,7 @@ static PyObject* produce_wave(PyObject *self, PyObject *args) {
 
   WaveType wt = static_cast<WaveType>(wave_type);
 
-  constexpr double two_pi = 6.283185307179586476925286766559;
+  constexpr double two_pi = 2.0 * PI;
   std::uniform_real_distribution<double> unif(-1.0,1.0);
   std::default_random_engine re;
 
@@ -312,6 +316,169 @@ static PyObject* sample_buffer(PyObject *self, PyObject *args) {
   Py_RETURN_NONE;
 }
 
+static PyObject* gen_animation(PyObject *self, PyObject *args) {
+  animations[++animation_count] = KeyFrames::Animation();
+  return PyLong_FromUnsignedLongLong(animation_count);
+}
+
+static PyObject* push_keyframe_boolean(PyObject *self, PyObject *args) {
+  bigint_t animation;
+  int channel;
+  double time_ms;
+  int interpolation_type;
+  bool value;
+
+  if (!PyArg_ParseTuple(args, "Lidip", &animation, &channel, &time_ms, &interpolation_type, &value)) {
+    PyErr_SetString(SyntherError, "Insufficient args");
+    return NULL;
+  }
+
+  auto anim = animations.find(animation);
+  if (anim == animations.end()) {
+    PyErr_SetString(SyntherError, "Animation not found.");
+    return NULL;
+  }
+
+  KeyFrames::KeyFrame kf = KeyFrames::KeyFrame(
+    channel,
+    time_ms,
+    static_cast<KeyFrames::KeyFrameInterpolationType>(interpolation_type),
+    value
+  );
+
+  KeyFrames::insertKeyFrame(anim->second, std::move(kf));
+
+  Py_RETURN_NONE;
+}
+
+static PyObject* push_keyframe_integer(PyObject *self, PyObject *args) {
+  bigint_t animation;
+  int channel;
+  double time_ms;
+  int interpolation_type;
+  bigint_t value;
+
+  if (!PyArg_ParseTuple(args, "LidiL", &animation, &channel, &time_ms, &interpolation_type, &value)) {
+    PyErr_SetString(SyntherError, "Insufficient args");
+    return NULL;
+  }
+
+  auto anim = animations.find(animation);
+  if (anim == animations.end()) {
+    PyErr_SetString(SyntherError, "Animation not found.");
+    return NULL;
+  }
+
+  KeyFrames::KeyFrame kf = KeyFrames::KeyFrame(
+    channel,
+    time_ms,
+    static_cast<KeyFrames::KeyFrameInterpolationType>(interpolation_type),
+    value
+  );
+
+  KeyFrames::insertKeyFrame(anim->second, std::move(kf));
+
+  Py_RETURN_NONE;
+}
+
+static PyObject* push_keyframe_double(PyObject *self, PyObject *args) {
+  bigint_t animation;
+  int channel;
+  double time_ms;
+  int interpolation_type;
+  double value;
+
+  if (!PyArg_ParseTuple(args, "Lidid", &animation, &channel, &time_ms, &interpolation_type, &value)) {
+    PyErr_SetString(SyntherError, "Insufficient args");
+    return NULL;
+  }
+
+  auto anim = animations.find(animation);
+  if (anim == animations.end()) {
+    PyErr_SetString(SyntherError, "Animation not found.");
+    return NULL;
+  }
+
+  KeyFrames::KeyFrame kf = KeyFrames::KeyFrame(
+    channel,
+    time_ms,
+    static_cast<KeyFrames::KeyFrameInterpolationType>(interpolation_type),
+    value
+  );
+
+  KeyFrames::insertKeyFrame(anim->second, std::move(kf));
+
+  Py_RETURN_NONE;
+}
+
+static PyObject* apply_effect(PyObject *self, PyObject *args) {
+  bigint_t buffer;
+  bigint_t animation;
+  int effectType;
+
+  if (!PyArg_ParseTuple(args, "LLi", &buffer, &animation, &effectType)) {
+    PyErr_SetString(SyntherError, "Insufficient args");
+    return NULL;
+  }
+
+  auto bf = buffers.find(buffer);
+  if (bf == buffers.end()) {
+    set_buffer_not_found_err(buffer);
+    return NULL;
+  }
+
+  auto anim = animations.find(animation);
+  if (anim == animations.end()) {
+    PyErr_SetString(SyntherError, "Animation not found.");
+    return NULL;
+  }
+
+  Effects::apply_effect(bf->second, anim->second, static_cast<Effects::EffectType>(effectType));
+
+  Py_RETURN_NONE;
+}
+
+static PyObject* test_keyframes(PyObject *self, PyObject *args) {
+  // Create some keyframes
+  KeyFrames::Animation animation;
+
+  KeyFrames::KeyFrame kf0 = KeyFrames::KeyFrame(
+    0,
+    0.0, 
+    KeyFrames::KeyFrameInterpolationType::Exponential, 
+    1.0
+  );
+
+  KeyFrames::KeyFrame kf1 = KeyFrames::KeyFrame(
+    0,
+    2.0, 
+    KeyFrames::KeyFrameInterpolationType::Exponential, 
+    20.0
+  );
+
+  KeyFrames::KeyFrame kf2 = KeyFrames::KeyFrame(
+    0,
+    4.0, 
+    KeyFrames::KeyFrameInterpolationType::Exponential, 
+    1.0
+  );
+
+  KeyFrames::insertKeyFrame(animation, std::move(kf0));
+  KeyFrames::insertKeyFrame(animation, std::move(kf1));
+  KeyFrames::insertKeyFrame(animation, std::move(kf2));
+
+  KeyFrames::processChannelAsDouble(
+    animation, 
+    0,
+    [](double currentTimeMS, double value){
+      printf("%lf,%lf\n", currentTimeMS, value);
+    },
+    0.1
+  );
+
+  Py_RETURN_NONE;
+}
+
 static PyMethodDef SyntherMethods[] = {
     {"gen_buffer",  gen_buffer, METH_VARARGS, "Generates a new audio buffer."},
     {"produce_wave", produce_wave, METH_VARARGS, "Produces a wave audio signal in a buffer."},
@@ -320,6 +487,12 @@ static PyMethodDef SyntherMethods[] = {
     {"free_buffer", free_buffer, METH_VARARGS, "Frees a buffer from memory."},
     {"sample_file", sample_file, METH_VARARGS, "Samples waveform from a .wav file, and inserts into a buffer."},
     {"sample_buffer", sample_buffer, METH_VARARGS, "Samples waveform from a source buffer, and inserts into target buffer."},
+    {"gen_animation",  gen_animation, METH_VARARGS, "Generates a new animation."},
+    {"push_keyframe_boolean", push_keyframe_boolean, METH_VARARGS, "Pushes a keyframe with value type boolean to an animation."},
+    {"push_keyframe_integer", push_keyframe_integer, METH_VARARGS, "Pushes a keyframe with value type integer to an animation."},
+    {"push_keyframe_double", push_keyframe_double, METH_VARARGS, "Pushes a keyframe with value type double to an animation."},
+    {"test_keyframes", test_keyframes, METH_VARARGS, "Test"},
+    {"apply_effect", apply_effect, METH_VARARGS, "Transforms a buffer with an effect."},
 
     {NULL, NULL, 0, NULL}        /* Sentinel */
 };

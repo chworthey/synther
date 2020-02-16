@@ -1,7 +1,13 @@
 import os
 from setuptools import setup, Extension, find_packages
 
-module = Extension('_synther', sources=['src/lib.cpp', 'src/WavIO.cpp'])
+module = Extension('_synther', sources=[
+  'src/Effects.cpp',
+  'src/KeyFrame.cpp',
+  'src/lib.cpp',
+  'src/Utils.cpp',
+  'src/WavIO.cpp'
+])
 
 setup(
   name='synther', 
